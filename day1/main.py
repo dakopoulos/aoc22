@@ -20,4 +20,10 @@ if __name__=='__main__':
     if len(sys.argv) != 2:
         print('usage: python main.py INPUT')
     calories = read_calories_file(sys.argv[1])
-    print('the elf with the most calories carries: %d' % max(calories))
+    calories.sort(reverse=True)
+    if len(calories) >= 3:
+        print('elf with 1st calories: %s' % calories[0])
+        print('-------- 2nd calories: %s' % calories[1])
+        print('-------- 3rd calories: %s' % calories[2])
+        print('Total: %d' % (calories[0] + calories[1] + calories[2]))
+        
