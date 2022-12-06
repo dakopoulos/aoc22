@@ -37,7 +37,8 @@ def init_stacks(filename):
     
     return stacks
 
-def rearrange(filename, stacks):
+
+def rearrange(filename, stacks, crane_version):
     read_moves = False
     with open(filename, 'r') as fp:
         for line in fp:
@@ -51,14 +52,24 @@ def rearrange(filename, stacks):
                 moves = list(filter(None, re.split(' |move|from|to', line)))
                 if len(moves) != 3:
                     raise Exception('invalid line: %s' % line)
+
                 total = int(moves[0])
                 src = int(moves[1]) - 1
                 trg = int(moves[2]) - 1
-                for i in range(0, total):
-                    if len(stacks[src]) > 0:
-                        crate = stacks[src].pop()
-                        stacks[trg].append(crate)
 
+                if crane_version == 9000:
+                    for i in range(0, total):
+                        if len(stacks[src]) > 0:
+                            crate = stacks[src].pop()
+                            stacks[trg].append(crate)
+                elif crane_version == 9001:
+                    if len(stacks[src]) >= total:
+                        crates = stacks[src][-total:]
+                        stacks[src] = stacks[src][:(-total+len(stacks[src]))]
+                        stacks[trg] += crates
+                else:
+                    raise Exception('invalid crane version')
+                    
 
 def get_top_crates(stacks):
     out = ''
@@ -68,12 +79,12 @@ def get_top_crates(stacks):
     return out
 
 
-def read_rearrangement_file(filename):
+def read_rearrangement_file(filename, crane_version=9000):
     # init stacks
     stacks = init_stacks(filename)
 
     # rearrange
-    rearrange(filename, stacks)
+    rearrange(filename, stacks, crane_version)
 
     top_crates = get_top_crates(stacks)
     print('top crates: %s' % top_crates)
@@ -82,4 +93,5 @@ def read_rearrangement_file(filename):
 if __name__=='__main__':
     if len(sys.argv) != 2:
         print('usage: python main.py INPUT')
-    read_rearrangement_file(sys.argv[1]) 
+    read_rearrangement_file(sys.argv[1], 9000) 
+    read_rearrangement_file(sys.argv[1], 9001) 
