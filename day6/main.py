@@ -17,5 +17,7 @@ def read_signal(filename, marker_length=4):
 if __name__=='__main__':
     if len(sys.argv) != 2:
         print('usage: python main.py INPUT')
-    marker = read_signal(sys.argv[1]) 
-    print('marker: %d' % marker)
+    sop_marker = read_signal(sys.argv[1], 4) 
+    print('start-of-packet marker: %d' % sop_marker)
+    som_marker = read_signal(sys.argv[1], 14) 
+    print('start-of-message marker: %d' % som_marker)
