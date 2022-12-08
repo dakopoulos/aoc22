@@ -17,14 +17,16 @@ def is_outside_tree(grid, r, c):
         or r == len(grid) - 1 or c == len(grid[r]) - 1
 
 def get_left(grid, r, c):
-    return grid[r][:c]
+    rng = grid[r][:c]
+    rng.reverse()
+    return rng
 
 def get_right(grid, r, c):
     return grid[r][c+1:]
 
 def get_up(grid, r, c):
     out = []
-    for i in range(0, r):
+    for i in reversed(range(0, r)):
         out.append(grid[i][c])
     return out 
 
@@ -43,7 +45,6 @@ def count_visible_trees(grid):
     total = 0
     for r in range(0, num_rows):
         for c in range(0, num_cols):
-            # handle trees on the perimeter
             if is_outside_tree(grid, r, c)\
                or max(get_up(grid, r, c)) < grid[r][c]\
                or max(get_down(grid, r, c)) < grid[r][c]\
@@ -53,8 +54,53 @@ def count_visible_trees(grid):
                  
     return total
 
+def calc_viewing_distance(tree, neighbors):
+    dist = 0
+    if neighbors is not None:
+        for i in neighbors:
+            if i < tree:
+                dist += 1
+            else:
+                dist += 1
+                break
+    return dist
+
+def add_dist(dist, total):
+    if dist > 0:
+        if total == 0:
+            total = dist
+        else:
+            total *= dist
+    return total
+    
+
+def calc_scenic_score(grid, r, c):
+    score = 0 
+    tree = grid[r][c]
+    
+    score = add_dist(calc_viewing_distance(tree, get_up(grid, r, c)), score)
+    score = add_dist(calc_viewing_distance(tree, get_down(grid, r, c)), score)
+    score = add_dist(calc_viewing_distance(tree, get_left(grid, r, c)), score)
+    score = add_dist(calc_viewing_distance(tree, get_right(grid, r, c)), score)
+    
+    return score;
+
+def find_best_scenic_score(grid):
+    num_rows = len(grid)
+    if len(grid) == 0:
+        return
+    num_cols = len(grid[0])
+    
+    best = 0
+    for r in range(0, num_rows):
+        for c in range(0, num_cols):
+            best = max(best, calc_scenic_score(grid, r, c))
+    return best
+
+
 if __name__=='__main__':
     if len(sys.argv) != 2:
         print('usage: python main.py INPUT')
     grid = read_tree_grid(sys.argv[1])
     print('total visible: %d' % count_visible_trees(grid))
+    print('best scenic score: %d' % find_best_scenic_score(grid))
