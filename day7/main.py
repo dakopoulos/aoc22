@@ -67,7 +67,7 @@ def read_fs(filename):
     
     return fs
 
-def calc_dir_sizes(d, threshold):
+def calc_dir_sizes(d, threshold=100000):
     total = 0
     total_below_threshold = 0
     for f in d.successors():
@@ -80,8 +80,31 @@ def calc_dir_sizes(d, threshold):
         total_below_threshold += total
     return (total, total_below_threshold)
 
+dir2rm_size = None
+def find_smallest_dir(d, min_size_dir):
+    global dir2rm_size
+    total = 0
+    for f in d.successors():
+        total += f['size']
+        if f['type'] == 'dir':
+            total += find_smallest_dir(f, min_size_dir)
+    if total >= min_size_dir and (dir2rm_size is None or dir2rm_size > total):
+        dir2rm_size = total
+    return total
+
+def empty_space(d, capacity, required_space):
+    used_space = calc_dir_sizes(d)[0]
+    print('used space: %d' % used_space)
+
+    avail_space = capacity - used_space
+    if required_space > avail_space:
+        min_size_dir = required_space - avail_space
+        print('must free at least: %d' % min_size_dir)
+        find_smallest_dir(d, min_size_dir)
+        print('size of directory to remove: %d' % dir2rm_size)
+
 if __name__=='__main__':
     if len(sys.argv) != 2:
         print('usage: python main.py INPUT')
     fs = read_fs(sys.argv[1])
-    print(calc_dir_sizes(fs.vs[0], 100000))
+    empty_space(fs.vs[0], 70000000, 30000000)
