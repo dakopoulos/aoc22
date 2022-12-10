@@ -22,6 +22,7 @@ def to_direction(s):
     else:
         raise Exception('invalid direction: %s' % s)
 
+
 class Position:
     def __init__(self, x_, y_):
       self.x = x_
@@ -37,14 +38,15 @@ class Position:
         elif direction == Direction.RIGHT:
             self.x += steps
 
-def move_tail(tail, head):
+
+def move_knot(tail, head):
     dx = head.x - tail.x
     dy = head.y - tail.y
     if abs(dx) > 2 or abs(dy) > 2:
         raise Exception('head moved too far away')
     
     if abs(dx) < 2 and abs(dy) < 2:
-        return
+        return False
     elif abs(dx) == 2:
         dx /= 2
         if abs(dy) > 0:
@@ -57,15 +59,17 @@ def move_tail(tail, head):
     tail.x += dx
     tail.y += dy
 
-def read_bridge_motions_file(filename):
+    return True
+
+
+def read_bridge_motions_file(filename, max_rope_size):
     with open(filename, 'r') as fp:
         # original positions for head and tail
-        head = Position(0, 0)
-        tail = Position(0, 0)
+        rope = [Position(0, 0)]
 
-        # all position that the tail visited
+        # all positions that the tail visited
         visited = set()
-        visited.add((tail.x, tail.y))
+        visited.add((rope[0].x, rope[0].y))
 
         for line in fp:
             toks = line.strip().split()
@@ -77,15 +81,28 @@ def read_bridge_motions_file(filename):
             steps = int(toks[1])
 
             # step-by-step
-            for i in range(0, steps):
-                head.move(direction, 1)
-                move_tail(tail, head) 
-                visited.add((tail.x, tail.y))
+            for step in range(0, steps):
+                # move head
+                rope[0].move(direction, 1)
+
+                # move knots based on the previous knot
+                last_knot_moved = False
+                for knot in range(1, len(rope)):
+                    last_knot_moved = move_knot(rope[knot], rope[knot - 1])
+                if len(rope) == 10:
+                    visited.add((rope[-1].x, rope[-1].y))
+
+                # add knot
+                if len(rope) == 1 or (last_knot_moved == True and len(rope) < max_rope_size):
+                    rope.append(Position(0, 0))
 
     return visited
 
+
 if __name__=='__main__':
-    if len(sys.argv) != 2:
-        print('usage: python main.py INPUT')
-    visited = read_bridge_motions_file(sys.argv[1])
+    argc = len(sys.argv)
+    if argc != 2 or argc != 3:
+        print('usage: python main.py INPUT [ROPESIZE=2]')
+    ropesize = int(sys.argv[2]) if argc == 3 else 2
+    visited = read_bridge_motions_file(sys.argv[1], ropesize)
     print('total visited: %d' % len(visited))
