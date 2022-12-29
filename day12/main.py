@@ -24,18 +24,18 @@ def read_map(filename):
             out.append([i for i in line])
     return out
 
-def find_startend(data):
-    start_i = None
-    end_i = None
+def find_startends(data, start_char, end_char):
+    start_i = []
+    end_i = []
 
     rows = len(data)
     cols = len(data[0])
     for r in range(0, rows):
         for c in range(0, cols):
-            if data[r][c] == 'S':
-                start_i = to_index(r, c, cols)
-            elif data[r][c] == 'E':
-                end_i = to_index(r, c, cols)
+            if data[r][c] == start_char:
+                start_i.append(to_index(r, c, cols))
+            elif data[r][c] == end_char:
+                end_i.append(to_index(r, c, cols))
     return (start_i, end_i)
 
 def to_index(r, c, total_c):
@@ -89,18 +89,24 @@ def to_graph(data):
     return graph    
                      
 if __name__=='__main__':
-    if len(sys.argv) != 2:
-        print('usage: python main.py INPUT')
+    if len(sys.argv) < 2:
+        print('usage: python main.py INPUT START')
 
     # read map
     raw_data = read_map(sys.argv[1])
-    start_i, end_i = find_startend(raw_data)
+    start_char = 'S'
+    if len(sys.argv) == 3:
+        start_char = sys.argv[2]
+    starts, ends = find_startends(raw_data, start_char, 'E')
 
     # convert to graph
     graph = csr_matrix(to_graph(raw_data))
 
     dist_matrix = dijkstra(
         csgraph=graph, unweighted=True, directed=True,
-        indices=start_i)
-
-    print('dist: %s' % dist_matrix[end_i])
+        indices=starts)
+    fewest = sys.maxsize
+    for i in range(0, len(starts)):
+        for j in ends:
+            fewest = min(dist_matrix[i][j], fewest)
+    print('fewest steps: %d' % fewest)
