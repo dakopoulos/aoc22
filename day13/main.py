@@ -53,26 +53,29 @@ def compare(l, r):
 
     
 def read_packets(filename):
+    packets = []
     with open(filename, 'r') as fp:
-        pair_id = 1
-        total_right_order = 0
         while True:
-            l = ast.literal_eval(fp.readline().strip())
-            r = ast.literal_eval(fp.readline().strip())
-            print('pair[%d]...' % pair_id)
-            right_order = compare(l, r)
-            print('...%s' % right_order)
-            if right_order == True:
-                total_right_order += pair_id
-            pair_id += 1
+            packets.append(ast.literal_eval(fp.readline().strip()))
+            packets.append(ast.literal_eval(fp.readline().strip()))
             if not fp.readline():
                 break
+    return packets
 
-        print('sum of indices in right order: %d' % total_right_order)
+
+def find_sum_of_indices_in_right_order(packets):
+    pair_id = 1
+    total_right_order = 0
+    for i in range(0, len(packets), 2):
+        if compare(packets[i], packets[i+1]) == True:
+            total_right_order += pair_id
+        pair_id += 1
+    return total_right_order 
 
 
 if __name__=='__main__':
     if len(sys.argv) < 2:
         print('usage: python main.py INPUT')
-    read_packets(sys.argv[1])
-
+    packets = read_packets(sys.argv[1])
+    total_right_order = find_sum_of_indices_in_right_order(packets)
+    print('sum of indices in right order: %d' % total_right_order)
