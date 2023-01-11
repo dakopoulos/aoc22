@@ -65,13 +65,29 @@ def read_data(filename):
                 Point(coords[2], coords[3])))
     return sensors, bounds
 
+
+def multirange_to_set(mr):
+    out = set()
+    for r in mr:
+        out = out.union(set(r))
+    return out
+
+
 if __name__=='__main__':
-    if len(sys.argv) < 2 or len(sys.argv) > 3:
-        print('usage: python main.py INPUT [Y]')
+    if len(sys.argv) < 2 or len(sys.argv) > 4:
+        print('usage: python main.py INPUT [Y | MIND MAXD]')
 
     # inputs
     filename = sys.argv[1]
-    trg_y = None if len(sys.argv) == 2 else int(sys.argv[2])
+    trg_y = None
+    min_dim = None
+    max_dim = None
+    if len(sys.argv) == 3:
+        trg_y = int(sys.argv[2])
+    elif len(sys.argv) == 4:
+        min_dim = int(sys.argv[2])
+        max_dim = int(sys.argv[3])
+    print('settings: filename(%s); y(%s); min,max=(%s, %s)' % (filename, trg_y, min_dim, max_dim))
 
     # read data
     print('reading data...')
@@ -91,16 +107,29 @@ if __name__=='__main__':
                 for r in multirange.normalize_multi(tmp + [rang]):
                     empty_locs[y].append(r)
 
-    # remove locations of sensors and beacons
+    # part 2
+    if min_dim is not None and max_dim is not None:
+        print('calculating tuning frequency...')
+        all_positions = range(min_dim, max_dim + 1)
+        for y, rang in empty_locs.items():
+            if y >= min_dim and y <= max_dim:
+                possible_positions = list(multirange.difference_one_multi(all_positions, empty_locs[y]))
+                if len(possible_positions) == 1 and len(list(possible_positions[0])) == 1:
+                    x = list(possible_positions[0])[0]
+                    freq = x * 4000000 + y
+                    print('tuning frequency: %d' % freq)
+                    break
+
+    # part1: find total positions on target-y than cannot contain a beacon
+    # (remove locations of sensors and beacons)
     if trg_y != None:
         print('removing locations of sensors and beacons...')
         if trg_y in empty_locs:
-            trg_y_locs = set()
-            for r in empty_locs[trg_y]:
-                trg_y_locs = trg_y_locs.union(set(r))
+            trg_y_locs = multirange_to_set(empty_locs[trg_y])
             for s in sensors:
                 if s.loc.y == trg_y:
                     trg_y_locs -= {s.loc.x}
                 if s.beacon.y == trg_y:
                     trg_y_locs -= {s.beacon.x}
-            print('[%d]: %d' % (trg_y, len(trg_y_locs)))
+            print('Positions that cannot contain beacon (y=%d): %d' % (trg_y, len(trg_y_locs)))
+        
